@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0B0C10">
+<title>Tonaltech Telemetry Hub · Mundial STEM Racing 2026</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230B0C10'/%3E%3Cpath d='M12 48 28 16h12L24 48z' fill='%23E10600'/%3E%3Cpath d='M32 48 48 16h6L38 48z' fill='%23e5e7eb'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Titillium+Web:ital,wght@0,400;0,600;0,700;1,600;1,700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.7.0/papaparse.min.js"></script>
+<style type="text/tailwindcss">
+  @theme {
+    --color-carbon: #0B0C10;
+    --color-pit: #14161D;
+    --color-line: #232734;
+    --color-tona: #E10600;
+    --color-tele: #10B981;
+    --color-sigma: #F59E0B;
+    --color-volt: #3B82F6;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --font-display: 'Titillium Web', 'Segoe UI', system-ui, sans-serif;
+  }
+</style>
+<style>
+:root{
+  --carbon:#0B0C10; --pit:#14161D; --line:#232734;
+  --tona:#E10600; --tele:#10B981; --tele-hi:#34D399; --sigma:#F59E0B; --volt:#3B82F6;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --disp:'Titillium Web','Segoe UI',system-ui,-apple-system,sans-serif;
+}
+html{scroll-behavior:smooth;scroll-padding-top:16px;background:var(--carbon)}
+@media (min-width:768px){html{scroll-padding-top:136px}}
+body{margin:0;font-family:var(--disp);color:#cbd5e1;background-color:var(--carbon);
+  background-image:radial-gradient(900px 520px at 6% -10%,rgba(225,6,0,.11),transparent 62%),radial-gradient(900px 560px at 104% 110%,rgba(59,130,246,.08),transparent 60%);
+  background-attachment:fixed}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
+button{cursor:pointer;font-family:inherit}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.c-tona{color:var(--tona)} .c-tele{color:var(--tele-hi)} .c-sigma{color:var(--sigma)} .c-volt{color:var(--volt)} .c-mut{color:#7c869a}
+
+.glass{background:rgba(20,22,29,.72);-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);border:1px solid var(--line)}
+header.glass{border-width:0 0 1px 0}
+
+.brand-mark{position:relative;display:block;width:38px;height:26px;flex:none}
+.brand-mark::before,.brand-mark::after{content:"";position:absolute;top:0;bottom:0;transform:skewX(-24deg);border-radius:2px}
+.brand-mark::before{left:6px;width:16px;background:var(--tona);box-shadow:0 0 16px rgba(225,6,0,.55)}
+.brand-mark::after{left:25px;width:6px;background:#e5e7eb;opacity:.9}
+.navlink{padding:.4rem .7rem;border-radius:8px;transition:color .15s,background .15s}
+.navlink:hover{color:#fff;background:rgba(255,255,255,.05)}
+.mod-title{font-style:italic;font-weight:700;text-transform:uppercase;letter-spacing:.09em}
+.ctl-label{margin-bottom:.4rem;font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:#8b94a7}
+
+.switch{display:inline-flex;align-items:center;gap:.75rem;padding:.45rem .95rem .45rem .55rem;border-radius:999px;border:1px solid var(--line);background:rgba(11,12,16,.6);transition:border-color .15s,background .15s,box-shadow .2s}
+.switch:disabled{opacity:.45;cursor:not-allowed}
+.switch .trk{position:relative;width:46px;height:26px;border-radius:999px;background:#2a2f3e;flex:none;transition:background .2s}
+.switch .thm{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#9aa3b5;transition:transform .2s,background .2s}
+.switch[aria-checked="true"]{border-color:rgba(225,6,0,.65);background:rgba(225,6,0,.10);box-shadow:0 0 0 1px rgba(225,6,0,.25),0 0 26px rgba(225,6,0,.2)}
+.switch[aria-checked="true"] .trk{background:var(--tona)}
+.switch[aria-checked="true"] .thm{transform:translateX(20px);background:#fff}
+
+.seg{display:inline-flex;max-width:100%;min-width:0;overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:rgba(11,12,16,.55)}
+.seg>button{flex:none;padding:.45rem .8rem;font-size:.8rem;font-weight:600;letter-spacing:.03em;color:#9aa3b5;text-align:left;transition:background .15s,color .15s}
+.seg>button+button{border-left:1px solid var(--line)}
+.seg>button:hover{color:#fff;background:rgba(255,255,255,.04)}
+.seg>button[aria-pressed="true"]{color:#fff;background:rgba(225,6,0,.16);box-shadow:inset 0 -2px 0 var(--tona)}
+.seg>button small{display:block;font-size:.66rem;font-weight:400;letter-spacing:0;color:#6b7488}
+.seg:disabled,.seg.off{opacity:.45;pointer-events:none}
+
+.btn-primary{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border-radius:10px;border:0;background:var(--tona);color:#fff;font-weight:700;font-size:.8rem;letter-spacing:.07em;text-transform:uppercase;box-shadow:0 0 0 1px rgba(255,255,255,.08) inset,0 6px 20px rgba(225,6,0,.28);transition:filter .15s,transform .05s}
+.btn-primary:hover{filter:brightness(1.12)} .btn-primary:active{transform:translateY(1px)}
+.btn-ghost{padding:.5rem .9rem;border-radius:10px;border:1px solid var(--line);color:#cbd5e1;font-weight:600;font-size:.8rem;letter-spacing:.04em;background:rgba(11,12,16,.5);transition:background .15s,border-color .15s}
+.btn-ghost:hover{background:rgba(255,255,255,.05);border-color:#343a4d}
+.btn-ficha{padding:.28rem .65rem;border-radius:8px;border:1px solid var(--line);font-size:.74rem;font-weight:600;color:#cbd5e1;background:rgba(11,12,16,.5);transition:background .15s,border-color .15s,color .15s}
+.btn-ficha:hover{border-color:var(--tona);color:#fff;background:rgba(225,6,0,.14)}
+
+.search{display:flex;align-items:center;gap:.5rem;padding:.45rem .75rem;border:1px solid var(--line);border-radius:10px;background:rgba(11,12,16,.55);min-width:min(100%,290px)}
+.search:focus-within{border-color:var(--volt);box-shadow:0 0 0 3px rgba(59,130,246,.18)}
+.search input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:#e5e7eb;font-family:inherit;font-size:.9rem}
+.search input::placeholder{color:#6b7488}
+.check{display:inline-flex;align-items:center;gap:.5rem;font-size:.82rem;font-weight:600;color:#cbd5e1;cursor:pointer}
+.check input{accent-color:var(--tona);width:16px;height:16px}
+
+.scroll{scrollbar-width:thin;scrollbar-color:#2c3243 transparent}
+.scroll::-webkit-scrollbar{width:10px;height:10px}
+.scroll::-webkit-scrollbar-thumb{background:#2c3243;border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+
+/* Hero (cluster de instrumentos) */
+.cluster{position:relative;border-radius:14px;overflow:hidden;box-shadow:0 0 0 1px rgba(225,6,0,.24),0 14px 50px rgba(225,6,0,.08)}
+.cluster::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--tona),rgba(225,6,0,.15) 70%,transparent)}
+#heroKpis{margin:-1px 0 0 -1px}
+.kpi{padding:1.1rem 1.25rem;border-left:1px solid var(--line);border-top:1px solid var(--line);min-width:0}
+.kpi-l{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:#8b94a7}
+.kpi-v{margin-top:.35rem;font-size:1.7rem;line-height:1.1;font-weight:700;color:#fff;white-space:nowrap}
+.kpi-v small{margin-left:.3rem;font-size:.8rem;font-weight:500;color:#7c869a}
+.sig{text-transform:none}
+.kpi-s{margin-top:.3rem;font-size:.75rem;color:#7c869a}
+
+/* Tablas */
+.tbl{border-collapse:separate;border-spacing:0;font-size:.88rem}
+.tbl th{position:sticky;top:0;z-index:2;background:rgba(20,22,29,.97);font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:#8b94a7;text-align:left;padding:.7rem .75rem;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl th small{display:block;font-size:.62rem;letter-spacing:.06em;text-transform:none;color:#5f6980;font-weight:400}
+.tbl td{padding:.5rem .75rem;border-bottom:1px solid rgba(35,39,52,.7);white-space:nowrap}
+.tbl .r{text-align:right}
+.tbl.rows tbody tr{cursor:pointer;transition:background .12s}
+.tbl.rows tbody tr:hover{background:rgba(255,255,255,.04)}
+.tbl tr.hero{background:rgba(225,6,0,.09)}
+.tbl tr.hero td:first-child{box-shadow:inset 3px 0 0 var(--tona)}
+.tbl tr.dim{opacity:.36}
+.badge{display:inline-flex;align-items:center;gap:.3rem;padding:.12rem .6rem;border-radius:999px;font-size:.72rem;font-weight:700;letter-spacing:.03em;border:1px solid}
+.badge.ok{color:var(--tele-hi);background:rgba(16,185,129,.10);border-color:rgba(16,185,129,.4)}
+.badge.warn{color:var(--sigma);background:rgba(245,158,11,.10);border-color:rgba(245,158,11,.45)}
+.chip-rec{margin-left:.4rem;padding:.05rem .4rem;border-radius:6px;font-size:.62rem;font-weight:700;letter-spacing:.1em;color:#052e22;background:var(--tele-hi);vertical-align:2px}
+.flag{display:inline-block;height:14px;width:auto;border-radius:2px;box-shadow:0 0 0 1px rgba(255,255,255,.14);vertical-align:-2px;margin-right:.3rem}
+
+/* Comparativa */
+.cmp-row{display:flex;align-items:center;gap:.25rem;border-radius:8px;transition:background .12s}
+.cmp-row:hover{background:rgba(255,255,255,.04)}
+.cmp-row.hero{box-shadow:inset 3px 0 0 var(--tona);background:rgba(225,6,0,.07)}
+.cmp-item{display:flex;align-items:center;gap:.55rem;flex:1;min-width:0;padding:.4rem .5rem;cursor:pointer;font-size:.88rem}
+.cmp-item input{accent-color:var(--tona);width:15px;height:15px;flex:none}
+.cmp-item.dim{opacity:.4}
+.cmp-row.hero .cmp-item{font-weight:700;color:#fff}
+.swatch{width:16px;height:0;border-top:3px solid var(--c,#2c3243);flex:none;border-radius:2px;opacity:.9}
+.swatch.d1{border-top-style:dashed} .swatch.d2{border-top-style:dotted}
+.ico-btn{width:28px;height:28px;flex:none;border-radius:7px;border:0;background:transparent;color:#6b7488;font-size:.9rem;transition:color .12s,background .12s}
+.ico-btn:hover{color:#fff;background:rgba(255,255,255,.08)}
+.chip{display:inline-flex;align-items:center;gap:.5rem;padding:.3rem .7rem;border:1px solid var(--line);border-radius:999px;background:rgba(11,12,16,.55);font-size:.78rem;font-weight:600;color:#cbd5e1;transition:opacity .15s,border-color .15s,background .15s}
+.chip:hover{border-color:#3a4156;background:rgba(255,255,255,.05)}
+.chip[aria-pressed="false"]{opacity:.38;text-decoration:line-through}
+.chip.hero{border-color:rgba(225,6,0,.6);color:#fff}
+.chip.focus{border-color:#93c5fd;background:rgba(147,197,253,.10)}
+.empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:1rem;color:#8b94a7;font-size:.92rem}
+.empty[hidden]{display:none}
+
+/* Modal */
+.modal{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:1.5rem 1rem;overflow-y:auto}
+.modal[hidden]{display:none}
+.modal-backdrop{position:fixed;inset:0;background:rgba(5,6,9,.74);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.modal-card{position:relative;width:min(980px,100%);margin:auto;border-radius:16px;padding:1.5rem;background:rgba(20,22,29,.94);box-shadow:0 30px 90px rgba(0,0,0,.65);outline:0}
+.modal-card.hero-card{box-shadow:0 0 0 1px rgba(225,6,0,.35),0 30px 90px rgba(0,0,0,.65),0 0 60px rgba(225,6,0,.12)}
+.modal-x{position:absolute;top:.9rem;right:.9rem;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:rgba(11,12,16,.6);color:#9aa3b5;font-size:1rem;transition:color .15s,border-color .15s}
+.modal-x:hover{color:#fff;border-color:var(--tona)}
+.mk{border:1px solid var(--line);border-radius:10px;padding:.85rem 1rem;background:rgba(11,12,16,.5)}
+.mk.hero{border-left:3px solid var(--tona)}
+.mk-l{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.13em;color:#8b94a7}
+.mk-v{margin-top:.3rem;font-size:1.55rem;font-weight:700;line-height:1.1;color:#fff}
+.mk-s{margin-top:.3rem;font-size:.74rem;color:#7c869a}
+.hist tbody tr.fs{background:rgba(225,6,0,.13)}
+.hist tbody tr.fs td{color:#f87171;font-weight:700}
+.hist tbody tr.ghost td{opacity:.5;text-decoration:line-through}
+.hist tbody tr.inv td{opacity:.7}
+.hist tbody tr.gap td{color:#4f586c;font-style:italic}
+.hist .sess{margin-left:.35rem;font-size:.68rem;color:#5f6980}
+.tag{margin-left:.4rem;padding:.04rem .38rem;border-radius:5px;font-family:var(--disp);font-size:.6rem;font-weight:700;letter-spacing:.08em;color:#cbd5e1;background:#2a2f3e;text-decoration:none;display:inline-block}
+.tag.ok{color:#052e22;background:var(--tele-hi)}
+
+/* Carga de datos */
+.gate{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(11,12,16,.97)}
+.gate[hidden]{display:none}
+.gate-card{width:min(560px,100%);border-radius:16px;padding:2rem}
+.spinner{width:30px;height:30px;border-radius:50%;border:3px solid #232734;border-top-color:var(--tona);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.drop{display:flex;align-items:center;justify-content:center;text-align:center;min-height:150px;margin-top:1.25rem;padding:1rem;border:2px dashed #2f3547;border-radius:14px;color:#9aa3b5;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+.drop:hover,.drop.over,.drop:focus-within{border-color:var(--tona);background:rgba(225,6,0,.06);color:#fff}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+.signature{display:inline-flex;align-items:center;gap:.5rem;padding:.6rem 1.1rem;border-radius:999px;font-size:.8rem;font-weight:600;color:#e5e7eb;box-shadow:0 8px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.06)}
+</style>
+</head>
+
+<body class="antialiased">
+<noscript><p style="padding:2rem;color:#fff">Tonaltech Telemetry Hub necesita JavaScript para mostrar la telemetría.</p></noscript>
+
+<header id="top" class="glass z-40 md:sticky md:top-0">
+  <div class="mx-auto max-w-[1560px] px-4 lg:px-6">
+    <div class="flex flex-wrap items-center gap-x-5 gap-y-3 py-3">
+      <a href="#top" class="mr-auto flex items-center gap-3" aria-label="Tonaltech Telemetry Hub">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="block leading-none">
+          <span class="block text-lg font-bold italic uppercase tracking-wider text-white sm:text-xl">Tonaltech Telemetry Hub</span>
+          <span class="mt-1 block text-[11px] uppercase tracking-[.2em] text-slate-400">Mundial STEM Racing 2026</span>
+        </span>
+      </a>
+      <nav class="hidden items-center gap-1 text-sm font-semibold uppercase tracking-wider text-slate-400 md:flex" aria-label="Secciones">
+        <a class="navlink" href="#ranking">Ranking</a>
+        <a class="navlink" href="#comparativa">Comparativa</a>
+      </nav>
+      <button id="perfSwitch" type="button" role="switch" aria-checked="false" aria-describedby="perfCaption" class="switch">
+        <span class="trk" aria-hidden="true"><span class="thm"></span></span>
+        <span class="block text-left leading-tight">
+          <span class="block text-[12px] font-bold uppercase tracking-wider text-white">Excluir infracciones de performance</span>
+          <span id="perfCaption" class="block text-[11px] text-slate-400">—</span>
+        </span>
+      </button>
+      <button id="btnLoad" type="button" class="btn-primary">Cargar CSV</button>
+    </div>
+    <div class="flex flex-wrap items-center gap-x-6 gap-y-2 pb-3 text-xs">
+      <div class="flex max-w-full items-center gap-2">
+        <span class="font-semibold uppercase tracking-wider text-slate-500">Reglamento</span>
+        <div id="segPerf" class="seg" role="group" aria-label="Filtro de reglamento">
+          <button type="button" data-perf="all">Todos</button>
+          <button type="button" data-perf="compliant">Solo legales</button>
+          <button type="button" data-perf="noncompliant">Solo infracciones</button>
+        </div>
+      </div>
+      <div class="flex max-w-full items-center gap-2">
+        <span class="font-semibold uppercase tracking-wider text-slate-500">Equipos excluidos</span>
+        <div id="segMode" class="seg" role="group" aria-label="Qué hacer con los equipos excluidos">
+          <button type="button" data-mode="hide">Ocultar</button>
+          <button type="button" data-mode="dim">Atenuar</button>
+        </div>
+      </div>
+      <p id="dataChip" class="num ml-auto text-[11px] text-slate-500"></p>
+    </div>
+  </div>
+</header>
+
+<main class="mx-auto max-w-[1560px] space-y-8 px-4 py-6 lg:px-6">
+
+  <!-- Resumen de TONALTECH -->
+  <section id="hero" class="cluster glass" aria-label="Resumen de TONALTECH">
+    <div class="flex flex-col xl:flex-row">
+      <div id="heroId" class="shrink-0 px-6 py-5 xl:w-[300px]"></div>
+      <div id="heroKpis" class="grid flex-1 grid-cols-2 md:grid-cols-3 xl:grid-cols-6"></div>
+    </div>
+  </section>
+
+  <!-- MÓDULO 1 -->
+  <section id="ranking" class="glass rounded-xl" aria-labelledby="h-rank">
+    <div class="border-b border-line px-4 pb-4 pt-5 lg:px-6">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 id="h-rank" class="mod-title text-lg text-white">Tabla maestra</h2>
+          <p id="rankNote" class="mt-1 text-sm text-slate-400"></p>
+        </div>
+        <label class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7488" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <span class="sr-only">Buscar por equipo o país</span>
+          <input id="q" type="search" placeholder="Buscar equipo o país" autocomplete="off">
+        </label>
+      </div>
+      <div class="mt-4 flex flex-wrap items-end gap-x-6 gap-y-4">
+        <div class="min-w-0 max-w-full">
+          <div class="ctl-label">Métrica</div>
+          <div id="segMetric" class="seg" role="group" aria-label="Métrica">
+            <button type="button" data-metric="pista">Pista (s)</button>
+            <button type="button" data-metric="reaccion">Reacción (s)</button>
+            <button type="button" data-metric="sector1">Sector 1 (s)</button>
+            <button type="button" data-metric="total">Tiempo Total (s)</button>
+            <button type="button" data-metric="velocidad">Velocidad Punta (m/s)</button>
+          </div>
+        </div>
+        <div class="min-w-0 max-w-full">
+          <div class="ctl-label">Criterio estadístico</div>
+          <div id="segStat" class="seg" role="group" aria-label="Criterio estadístico">
+            <button type="button" data-stat="avg">Promedio Global<small>Ritmo de carrera</small></button>
+            <button type="button" data-stat="best">Mejor Marca Única<small>Pico personal / récord</small></button>
+            <button type="button" data-stat="sigma">Desviación Estándar σ<small>Índice de consistencia</small></button>
+          </div>
+        </div>
+        <div class="min-w-0 max-w-full">
+          <div class="ctl-label">Orden</div>
+          <div id="segOrder" class="seg" role="group" aria-label="Orden">
+            <button type="button" data-order="asc">Menor a mayor</button>
+            <button type="button" data-order="desc">Mayor a menor</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="tableWrap" class="scroll max-h-[72vh] overflow-auto">
+      <table class="tbl rows w-full min-w-[1060px]">
+        <thead>
+          <tr>
+            <th scope="col">Pos</th>
+            <th scope="col">Equipo</th>
+            <th scope="col">País</th>
+            <th scope="col">Status</th>
+            <th scope="col" class="r">Válidas</th>
+            <th scope="col" class="r" id="thValue">Valor</th>
+            <th scope="col" class="r">Prom. Pista</th>
+            <th scope="col" class="r">Prom. Reacción</th>
+            <th scope="col" class="r" id="thSigma">Consistencia <span class="sig">σ</span></th>
+            <th scope="col"><span class="sr-only">Ficha</span></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- MÓDULO 2 -->
+  <section id="comparativa" class="glass rounded-xl" aria-labelledby="h-cmp">
+    <div class="flex flex-wrap items-end justify-between gap-4 border-b border-line px-4 pb-4 pt-5 lg:px-6">
+      <div>
+        <h2 id="h-cmp" class="mod-title text-lg text-white">Comparativa multi-equipo</h2>
+        <p class="mt-1 text-sm text-slate-400">Las 8 corridas de cada equipo. El eje vertical está invertido: arriba quedan los tiempos más rápidos.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-x-5 gap-y-3">
+        <div id="segCmpMetric" class="seg" role="group" aria-label="Métrica de la gráfica">
+          <button type="button" data-cmetric="pista">Pista</button>
+          <button type="button" data-cmetric="reaccion">Reacción</button>
+          <button type="button" data-cmetric="sector1">Sector 1</button>
+          <button type="button" data-cmetric="total">Total</button>
+        </div>
+        <label class="check"><input id="chkCross" type="checkbox" checked> Marcar cruces con TONALTECH</label>
+      </div>
+    </div>
+    <div class="grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[340px_minmax(0,1fr)]">
+      <aside class="border-b border-line p-4 lg:border-b-0 lg:border-r" aria-label="Selección de equipos">
+        <div class="flex max-w-full items-center gap-2">
+          <button id="btnTop10" type="button" class="btn-primary">Top 10</button>
+          <button id="btnClear" type="button" class="btn-ghost">Limpiar</button>
+          <span id="cmpCount" class="num ml-auto text-sm text-slate-400" aria-live="polite"></span>
+        </div>
+        <p class="mt-2 text-xs text-slate-500">Top 10 usa el ranking de la métrica elegida y agrega a TONALTECH para compararlo.</p>
+        <label class="search mt-3">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7488" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <span class="sr-only">Buscar equipo en la lista</span>
+          <input id="cmpQ" type="search" placeholder="Buscar en la lista" autocomplete="off">
+        </label>
+        <ul id="cmpList" class="scroll -mx-1 mt-3 max-h-[540px] overflow-auto pr-1"></ul>
+      </aside>
+      <div class="min-w-0 p-4 lg:p-5">
+        <div class="relative h-[420px] md:h-[560px]">
+          <canvas id="cmpChart" role="img" aria-label="Gráfica multi-línea de las 8 corridas por equipo"></canvas>
+          <div id="cmpEmpty" class="empty" hidden>Marca equipos en el panel de la izquierda para trazar sus curvas.</div>
+        </div>
+        <div id="cmpLegend" class="mt-4 flex flex-wrap gap-2"></div>
+        <div class="scroll mt-6 overflow-auto">
+          <table id="cmpTable" class="tbl w-full min-w-[680px]">
+            <thead>
+              <tr>
+                <th scope="col">Equipo</th>
+                <th scope="col" class="r">Válidas</th>
+                <th scope="col" class="r">Mejor</th>
+                <th scope="col" class="r">Promedio</th>
+                <th scope="col" class="r"><span class="sig">σ</span></th>
+                <th scope="col" class="r">Δ prom. vs TONALTECH</th>
+              </tr>
+            </thead>
+            <tbody id="cmpSumBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="mt-10 border-t border-line">
+  <div class="mx-auto flex max-w-[1560px] flex-col gap-4 px-4 py-6 md:flex-row md:items-center md:justify-between lg:px-6">
+    <p class="max-w-xl text-xs leading-relaxed text-slate-500">Los promedios y rankings consideran solo carreras válidas: se excluyen salidas en falso (FS), no salidas (DNS), registros incompletos y carreras anuladas por re-run.</p>
+    <div class="signature glass md:ml-auto">🏎️ Diseñado &amp; Desarrollado por Angel Leonardo Rojas Arroyo · Colaboración Telemétrica: Giancarlo · Escudería Tonaltech 🇲🇽</div>
+  </div>
+</footer>
+
+<!-- MÓDULO 3: ficha técnica -->
+<div id="modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="modal-backdrop" data-close></div>
+  <div id="modalCard" class="modal-card glass" tabindex="-1">
+    <button type="button" class="modal-x" data-close aria-label="Cerrar ficha">✕</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- Carga del CSV -->
+<div id="gate" class="gate">
+  <div class="gate-card glass">
+    <div id="gateLoad" class="flex items-center gap-4">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="text-slate-300">Leyendo mundial_2026_clean.csv…</p>
+    </div>
+    <div id="gateUpload" hidden>
+      <h2 id="gateTitle" class="mod-title text-lg text-white">Carga la telemetría</h2>
+      <p id="gateMsg" class="mt-2 text-sm leading-relaxed text-slate-400"></p>
+      <label id="drop" class="drop">
+        <input id="file" type="file" accept=".csv,text/csv" class="sr-only">
+        <span>Arrastra tu archivo .csv aquí o haz clic para elegirlo</span>
+      </label>
+      <button id="gateCancel" type="button" class="btn-ghost mt-4" hidden>Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ============================== Configuración ============================== */
+const CSV_URL = 'mundial_2026_clean.csv';
+const HERO = 'TONALTECH';
+const SLOTS = 8;
+const MAX_CMP = 30;
+const RED = '#E10600';
+const MONO = "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+const DISP = "'Titillium Web', 'Segoe UI', system-ui, sans-serif";
+
+const METRICS = {
+  pista:     { label:'Pista (s)',             short:'Pista',     key:'track', dec:3, best:'min' },
+  reaccion:  { label:'Reacción (s)',          short:'Reacción',  key:'react', dec:3, best:'min' },
+  sector1:   { label:'Sector 1 (s)',          short:'Sector 1',  key:'s1',    dec:3, best:'min' },
+  total:     { label:'Tiempo Total (s)',      short:'Total',     key:'total', dec:3, best:'min' },
+  velocidad: { label:'Velocidad Punta (m/s)', short:'Velocidad', key:'speed', dec:2, best:'max' }
+};
+const STATS = {
+  avg:   { label:'Promedio Global',       short:'promedio' },
+  best:  { label:'Mejor Marca Única',     short:'mejor marca' },
+  sigma: { label:'Desviación Estándar σ', short:'σ' }
+};
+
+const ALIASES = {
+  heat:['heat carrera','heat','carrera','heat race'],
+  lane:['carril','lane'],
+  team:['equipo','team'],
+  country:['pais','country'],
+  react:['reaccion s','reaccion','reaction s','reaction'],
+  s1:['sector 1 s','sector 1','sector1','s1'],
+  track:['pista s','pista','track s','track'],
+  total:['total s','total'],
+  speed:['velocidad m s','velocidad','speed m s','speed'],
+  pos:['posicion','position','pos'],
+  perf:['performance status','performance'],
+  session:['sesion','session'],
+  slot:['corrida','run','slot'],
+  img:['imagen','image'],
+  estado:['estado','status'],
+  rerun:['re run','rerun'],
+  inrank:['en ranking','valida','valid']
+};
+
+const FLAG_CODES = {
+  'BRAZIL':['br'],'THAILAND':['th'],'DOMINICAN REPUBLIC':['do'],'CANADA':['ca'],'SINGAPORE':['sg'],'KUWAIT':['kw'],'GERMANY':['de'],'CHINA':['cn'],'SPAIN':['es'],
+  'ENGLAND':['gb-eng'],'FRANCE':['fr'],'UNITED ARAB EMIRATES':['ae'],'GREECE':['gr'],'CYPRUS':['cy'],'GREECE & CYPRUS':['gr','cy'],'HONG KONG':['hk'],'INDIA':['in'],
+  'AUSTRALIA':['au'],'MALAYSIA':['my'],'MAURITIUS':['mu'],'ITALY':['it'],'UNITED STATES OF AMERICA & UNITED KINGDOM':['us','gb'],'MEXICO':['mx'],'IRELAND':['ie'],
+  'MACAO':['mo'],'SAUDI ARABIA':['sa'],'JAPAN':['jp'],'VIETNAM':['vn'],'VIET NAM':['vn'],'PORTUGAL':['pt'],'SCOTLAND':['gb-sct'],'LUXEMBOURG':['lu'],'UNITED KINGDOM':['gb'],
+  'NEW ZEALAND':['nz'],'AZERBAIJAN':['az'],'UNITED STATES OF AMERICA':['us'],'WALES':['gb-wls'],'KAZAKHSTAN':['kz'],'SOUTH KOREA':['kr'],'KOREA (REPUBLIC OF)':['kr']
+};
+
+/* Rivales: azules/cian/violeta (el rojo es exclusivo de TONALTECH). 10 colores × 3 trazos = 30 líneas distinguibles. */
+const PALETTE = ['#3B82F6','#22D3EE','#A78BFA','#2DD4BF','#818CF8','#F472B6','#38BDF8','#C084FC','#94A3B8','#E879F9'];
+const DASHES = [[], [8,4], [2,4]];
+
+/* ================================== Estado ================================== */
+const S = {
+  teams:[], byKey:new Map(), global:{ best:{} }, fileName:'', rowCount:0,
+  perf:'all', mode:'hide',
+  metric:'pista', stat:'avg', order:'asc', orderAuto:true, query:'',
+  cmp:{ metric:'pista', selected:[], q:'', cross:true, styles:new Map(), hidden:new Set() },
+  chart:null, focus:null, lastFocusEl:null
+};
+
+/* ================================ Utilidades ================================ */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const norm = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const num = v => {
+  if (v == null) return null;
+  let s = String(v).trim();
+  if (!s || /^(fs|dns|n\/a|na|nan|-|—)$/i.test(s)) return null;
+  s = s.replace(',', '.');
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : null;
+};
+const mean = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : null;
+const sd = a => {
+  if (a.length < 2) return null;
+  const m = mean(a);
+  return Math.sqrt(a.reduce((s, x) => s + (x - m) ** 2, 0) / (a.length - 1));
+};
+const minOf = a => a.length ? Math.min(...a) : null;
+const maxOf = a => a.length ? Math.max(...a) : null;
+function fix(v, d = 3) {
+  if (v == null || !Number.isFinite(v)) return '—';
+  const f = 10 ** d, sgn = v < 0 ? -1 : 1;
+  return (Math.round(Number((Math.abs(v) * f).toPrecision(12))) / f * sgn).toFixed(d);
+}
+const sfix = (v, d = 3) => (v == null || !Number.isFinite(v)) ? '—' : ((v > 0 ? '+' : '') + fix(v, d));
+const hexA = (hex, a) => { const n = parseInt(hex.replace('#', ''), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
+const sigH = t => esc(t).replace(/σ/g, '<span class="sig">σ</span>');
+const SMALL = new Set(['of', 'and', 'the']);
+const titleCase = s => String(s || '').toLowerCase().replace(/[^\s&()\-\/]+/g, w => SMALL.has(w) ? w : w[0].toUpperCase() + w.slice(1));
+function flagHTML(country) {
+  const codes = FLAG_CODES[String(country || '').toUpperCase()] || [];
+  return codes.map(c => `<img class="flag" src="https://flagcdn.com/w40/${c}.png" srcset="https://flagcdn.com/w80/${c}.png 2x" alt="" loading="lazy" decoding="async" height="14" onerror="this.style.display='none'">`).join('');
+}
+
+/* =============================== Carga de datos =============================== */
+function showGate(mode, msg, canCancel = false) {
+  const gate = $('#gate');
+  gate.hidden = mode === 'none';
+  $('#gateLoad').hidden = mode !== 'loading';
+  $('#gateUpload').hidden = mode !== 'upload';
+  if (mode === 'upload') {
+    $('#gateMsg').textContent = msg || '';
+    $('#gateCancel').hidden = !canCancel;
+    $('#drop').focus?.();
+  }
+}
+
+function parseCSV(input) {
+  return new Promise((resolve, reject) => {
+    Papa.parse(input, {
+      header: true,
+      skipEmptyLines: 'greedy',
+      transformHeader: h => String(h).replace(/^\uFEFF/, '').trim(),
+      complete: r => resolve(r),
+      error: e => reject(e)
+    });
+  });
+}
+
+function buildDataset(rows, fields) {
+  const map = {};
+  for (const f of fields) {
+    const n = norm(f);
+    for (const [k, al] of Object.entries(ALIASES)) if (!map[k] && al.includes(n)) map[k] = f;
+  }
+  if (!map.team || !map.track) throw new Error('El archivo necesita al menos las columnas "Equipo" y "Pista (s)".');
+  const get = (r, k) => map[k] ? r[map[k]] : undefined;
+  const txt = (r, k) => String(get(r, k) ?? '').trim();
+
+  const recs = [];
+  rows.forEach((r, i) => {
+    const name = txt(r, 'team');
+    if (!name) return;
+    const pos = txt(r, 'pos').toUpperCase();
+    const estado = txt(r, 'estado').toUpperCase();
+    const cells = ['react', 'track', 'total'].map(k => txt(r, k).toUpperCase());
+    const fs = pos === 'FS' || estado === 'FS' || cells.includes('FS');
+    const dns = pos === 'DNS' || estado === 'DNS' || cells.includes('DNS');
+    const heatLabel = txt(r, 'heat');
+    const hm = /HEAT\s*(\d+)/i.exec(heatLabel), rm = /RACE\s*(\d+)/i.exec(heatLabel);
+    const inrank = txt(r, 'inrank').toUpperCase();
+    const rec = {
+      i, team:name, key:name.toUpperCase(), country:txt(r, 'country'),
+      heatLabel, heat:hm ? +hm[1] : null, race:rm ? +rm[1] : null, lane:txt(r, 'lane').replace(/^lane\s*/i, ''),
+      session:num(get(r, 'session')), slot:num(get(r, 'slot')), img:txt(r, 'img'),
+      react:num(get(r, 'react')), s1:num(get(r, 'sector1') ?? get(r, 's1')), track:num(get(r, 'track')),
+      total:num(get(r, 'total')), speed:num(get(r, 'speed')),
+      pos, estado, rerun:/^(SI|SÍ|YES|TRUE|1)$/i.test(txt(r, 'rerun')),
+      perfRaw:txt(r, 'perf'), fs, dns
+    };
+    rec.valid = rec.track != null && !fs && !dns && !/^(NO|FALSE|0)$/.test(inrank) && !/ANULAD|INCOMPLET/.test(estado);
+    recs.push(rec);
+  });
+  if (!recs.length) throw new Error('El archivo no trae filas con datos.');
+
+  const groups = new Map();
+  for (const r of recs) { if (!groups.has(r.key)) groups.set(r.key, []); groups.get(r.key).push(r); }
+
+  const teams = [];
+  for (const [key, list] of groups) {
+    let seq = 0;
+    for (const r of list) {
+      let s = (r.slot != null && r.slot >= 1 && r.slot <= SLOTS) ? Math.round(r.slot) : null;
+      if (s == null && r.session >= 1 && r.race >= 1) s = (Math.round(r.session) - 1) * 2 + r.race;
+      if (s == null) { if (!r.rerun) seq++; s = seq || 1; }
+      r.slotIdx = Math.max(1, Math.min(SLOTS, s));
+    }
+    const slots = Array.from({ length:SLOTS }, () => ({ main:null, extras:[] }));
+    const prio = r => r.valid ? (r.rerun ? 4 : 3) : (r.fs || r.dns ? 2 : 1);
+    for (const r of list) {
+      const sl = slots[r.slotIdx - 1];
+      if (!sl.main) sl.main = r;
+      else if (prio(r) >= prio(sl.main)) { sl.extras.push(sl.main); sl.main = r; }
+      else sl.extras.push(r);
+    }
+    const perfSrc = (list.find(r => r.perfRaw) || {}).perfRaw || '';
+    teams.push({
+      key, name:list[0].team, country:list[0].country, slots,
+      validRuns:slots.map(s => s.main).filter(r => r && r.valid),
+      compliant:!/non/i.test(perfSrc), hasPerf:!!perfSrc, isHero:key === HERO
+    });
+  }
+  return { teams, count:recs.length };
+}
+
+async function ingest(input, name) {
+  showGate('loading');
+  try {
+    const res = await parseCSV(input);
+    const { teams, count } = buildDataset(res.data, res.meta.fields || []);
+    S.teams = teams;
+    S.byKey = new Map(teams.map(t => [t.key, t]));
+    S.fileName = name;
+    S.rowCount = count;
+    computeGlobals();
+    S.perf = 'all'; S.query = ''; $('#q').value = ''; S.cmp.q = ''; $('#cmpQ').value = '';
+    setSelection(topKeys());
+    showGate('none');
+    renderAll();
+  } catch (err) {
+    console.error(err);
+    showGate('upload', `${err.message || err} Revisa el archivo o elige otro.`, S.teams.length > 0);
+  }
+}
+
+async function autoLoad() {
+  showGate('loading');
+  try {
+    const r = await fetch(CSV_URL + '?t=' + Date.now(), { cache:'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    await ingest(await r.text(), CSV_URL);
+  } catch (err) {
+    console.warn('Carga automática no disponible:', err);
+    showGate('upload', 'No pude leer mundial_2026_clean.csv desde esta carpeta. Si abriste index.html con doble clic, el navegador bloquea esa lectura; en GitHub Pages sí funciona. Mientras tanto, cárgalo manualmente:');
+  }
+}
+
+function computeGlobals() {
+  S.global = { best:{} };
+  for (const [mk, m] of Object.entries(METRICS)) {
+    const all = S.teams.flatMap(t => t.validRuns.map(r => r[m.key]).filter(v => v != null));
+    S.global.best[mk] = all.length ? (m.best === 'max' ? maxOf(all) : minOf(all)) : null;
+  }
+}
+
+/* ============================ Estadística y ranking ============================ */
+const passes = t => S.perf === 'all' || (S.perf === 'compliant' ? t.compliant : !t.compliant);
+const shown = t => passes(t) || S.mode === 'dim';
+const valuesOf = (t, mk) => t.validRuns.map(r => r[METRICS[mk].key]).filter(v => v != null);
+
+function statValue(t, mk, st) {
+  const v = valuesOf(t, mk);
+  if (!v.length) return null;
+  if (st === 'avg') return mean(v);
+  if (st === 'best') return METRICS[mk].best === 'max' ? maxOf(v) : minOf(v);
+  return sd(v);
+}
+const bestTrack = t => minOf(valuesOf(t, 'pista'));
+const natDir = (mk, st) => (METRICS[mk].best === 'max' && st !== 'sigma') ? 'desc' : 'asc';
+
+function cmpFactory(dir) {
+  return (a, b) => {
+    const an = a.v == null, bn = b.v == null;
+    if (an || bn) return an && bn ? a.t.name.localeCompare(b.t.name) : (an ? 1 : -1);
+    const d = a.v - b.v;
+    if (Math.abs(d) > 1e-12) return dir === 'asc' ? d : -d;
+    const bp = (a.bp ?? Infinity) - (b.bp ?? Infinity);
+    if (Number.isFinite(bp) && Math.abs(bp) > 1e-12) return bp;
+    return a.t.name.localeCompare(b.t.name);
+  };
+}
+function rankBy(mk, st, pred) {
+  const items = S.teams.map(t => ({ t, v:statValue(t, mk, st), bp:bestTrack(t), pass:pred(t), pos:null }));
+  const pool = items.filter(i => i.pass).sort(cmpFactory(natDir(mk, st)));
+  let p = 0;
+  for (const i of pool) if (i.v != null) i.pos = ++p;
+  return { items, pool, total:p };
+}
+
+function missingNote(t) {
+  const out = [];
+  t.slots.forEach((s, i) => {
+    const lab = `C${i + 1}`;
+    if (!s.main) out.push(`${lab}: sin captura`);
+    else if (s.main.fs) out.push(`${lab}: FS`);
+    else if (s.main.dns) out.push(`${lab}: DNS`);
+    else if (!s.main.valid) out.push(`${lab}: incompleta`);
+  });
+  return out.length ? out.join(' · ') : 'Las 8 corridas son válidas';
+}
+function incidentSummary(t) {
+  let fs = 0, dns = 0, inc = 0, miss = 0;
+  t.slots.forEach(s => {
+    if (!s.main) miss++;
+    else if (s.main.fs) fs++;
+    else if (s.main.dns) dns++;
+    else if (!s.main.valid) inc++;
+  });
+  const parts = [];
+  if (fs) parts.push(`${fs} FS`);
+  if (dns) parts.push(`${dns} DNS`);
+  if (inc) parts.push(`${inc} incompleta${inc > 1 ? 's' : ''}`);
+  if (miss) parts.push(`${miss} sin captura`);
+  return parts.length ? parts.join(' · ') : 'Sin incidencias';
+}
+
+/* ================================= Encabezado ================================= */
+function syncControls() {
+  const press = (sel, attr, val) => $$(`${sel} button`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr] === val)));
+  press('#segPerf', 'perf', S.perf);
+  press('#segMode', 'mode', S.mode);
+  press('#segMetric', 'metric', S.metric);
+  press('#segStat', 'stat', S.stat);
+  press('#segOrder', 'order', S.order);
+  press('#segCmpMetric', 'cmetric', S.cmp.metric);
+  const sw = $('#perfSwitch');
+  sw.setAttribute('aria-checked', String(S.perf === 'compliant'));
+  const hasPerf = S.teams.some(t => t.hasPerf);
+  sw.disabled = !hasPerf;
+  $('#segPerf').classList.toggle('off', !hasPerf);
+  $('#segMode').classList.toggle('off', !hasPerf);
+  const legal = S.teams.filter(t => t.compliant).length, inf = S.teams.length - legal;
+  $('#perfCaption').textContent = hasPerf
+    ? (S.perf === 'noncompliant' ? `Viendo solo infracciones · ${inf} equipos` : `${legal} legales · ${inf} con infracción`)
+    : 'El CSV no trae Performance_Status';
+  $('#chkCross').checked = S.cmp.cross;
+}
+function renderChip() {
+  $('#dataChip').textContent = `● ${S.rowCount} registros · ${S.teams.length} equipos · ${S.fileName}`;
+}
+
+/* ================================ Resumen hero ================================ */
+function renderHero() {
+  const t = S.byKey.get(HERO);
+  const idEl = $('#heroId'), kEl = $('#heroKpis');
+  if (!t) {
+    idEl.innerHTML = '<p class="mod-title text-xl text-white">Tonaltech</p>';
+    kEl.innerHTML = '<p class="p-6 text-sm text-slate-400">Este archivo no incluye a TONALTECH.</p>';
+    return;
+  }
+  const m = METRICS[S.metric];
+  const R = rankBy(S.metric, S.stat, passes);
+  const me = R.items.find(i => i.t === t);
+  const lead = rankBy('pista', 'avg', passes).pool.find(i => i.v != null);
+  const best = minOf(valuesOf(t, 'pista')), avg = mean(valuesOf(t, 'pista'));
+  const react = mean(valuesOf(t, 'reaccion')), sig = sd(valuesOf(t, 'pista'));
+  const rec = S.global.best.pista;
+  const isRec = best != null && rec != null && Math.abs(best - rec) < 5e-7;
+
+  idEl.innerHTML = `
+    <p class="mod-title text-3xl leading-none text-white">${esc(t.name)}</p>
+    <p class="mt-3 flex items-center text-sm text-slate-300">${flagHTML(t.country)}<span>Escudería · ${esc(titleCase(t.country))}</span></p>
+    <p class="mt-3">${t.compliant ? '<span class="badge ok">✓ Legal</span>' : '<span class="badge warn">⚠️ Non-Compliant</span>'}</p>`;
+
+  const kpi = (l, v, s, cls = '') => `<div class="kpi"><div class="kpi-l">${l}</div><div class="kpi-v num ${cls}">${v}</div><div class="kpi-s">${s}</div></div>`;
+  kEl.innerHTML = [
+    kpi('Posición', me && me.pos ? `P${me.pos}` : '—', `de ${R.total} · ${esc(m.short)} · ${STATS[S.stat].short}`, 'c-tona'),
+    kpi('Mejor pista', `${fix(best)}<small>s</small>`, isRec ? 'Récord del torneo' : `Δ récord ${sfix(best != null && rec != null ? best - rec : null)} s`, 'c-tele'),
+    kpi('Promedio pista', `${fix(avg)}<small>s</small>`, lead ? `Δ líder ${sfix(avg != null ? avg - lead.v : null)} s` : '—'),
+    kpi('Prom. reacción', `${fix(react)}<small>s</small>`, 'Salida al semáforo', 'c-volt'),
+    kpi('<span class="sig">σ</span> pista', `${fix(sig)}<small>s</small>`, 'Consistencia', 'c-sigma'),
+    kpi('Carreras válidas', `${t.validRuns.length}<small>/${SLOTS}</small>`, esc(incidentSummary(t)))
+  ].join('');
+}
+
+/* ============================== Módulo 1: tabla ============================== */
+function rowHTML(i) {
+  const t = i.t, m = METRICS[S.metric];
+  const pm = statValue(t, 'pista', 'avg'), rv = statValue(t, 'reaccion', 'avg'), sg = statValue(t, S.metric, 'sigma');
+  const lead = i.pos === 1;
+  const gb = S.global.best[S.metric];
+  const rec = S.stat === 'best' && i.v != null && gb != null && Math.abs(i.v - gb) < 5e-7;
+  const valCls = S.stat === 'sigma' ? 'c-sigma' : (lead || rec ? 'c-tele' : 'text-white');
+  const nv = t.validRuns.length;
+  return `<tr data-key="${esc(t.key)}" class="${t.isHero ? 'hero' : ''} ${i.pass ? '' : 'dim'}">
+    <td class="num font-semibold ${lead ? 'c-tele' : 'c-mut'}">${i.pos ?? '—'}</td>
+    <td class="font-semibold ${t.isHero ? 'text-white' : 'text-slate-100'}">${esc(t.name)}</td>
+    <td class="text-slate-300">${flagHTML(t.country)}${esc(titleCase(t.country))}</td>
+    <td>${t.compliant ? '<span class="badge ok">✓ Legal</span>' : '<span class="badge warn">⚠️ Non-Compliant</span>'}</td>
+    <td class="r num ${nv < SLOTS ? 'text-slate-200' : 'c-mut'}" title="${esc(missingNote(t))}">${nv}/${SLOTS}</td>
+    <td class="r num text-[15px] font-bold ${valCls}">${fix(i.v, m.dec)}${rec ? '<span class="chip-rec">REC</span>' : ''}</td>
+    <td class="r num c-volt">${fix(pm)}</td>
+    <td class="r num c-volt">${fix(rv)}</td>
+    <td class="r num c-sigma">${fix(sg)}</td>
+    <td class="r"><button type="button" class="btn-ficha" aria-label="Ver ficha de ${esc(t.name)}">Ver ficha</button></td>
+  </tr>`;
+}
+function renderTable() {
+  const m = METRICS[S.metric];
+  const R = rankBy(S.metric, S.stat, passes);
+  const q = norm(S.query);
+  const list = R.items.filter(i => shown(i.t)).sort(cmpFactory(S.order))
+    .filter(i => !q || norm(i.t.name).includes(q) || norm(i.t.country).includes(q));
+  $('#thValue').innerHTML = `${sigH(STATS[S.stat].label)}<small>${esc(m.label)}</small>`;
+  $('#thSigma').innerHTML = `Consistencia <span class="sig">σ</span><small>${esc(m.short)}</small>`;
+  $('#tbody').innerHTML = list.length ? list.map(rowHTML).join('')
+    : '<tr><td colspan="10" class="py-10 text-center text-slate-400">Ningún equipo coincide con la búsqueda y los filtros activos.</td></tr>';
+  const filt = S.perf === 'all' ? '' : (S.perf === 'compliant' ? ' · solo equipos legales' : ' · solo equipos con infracción');
+  $('#rankNote').textContent = `${STATS[S.stat].label} de ${m.label}${filt} · ${R.total} equipos con datos`;
+}
+
+/* ======================= Módulo 2: comparativa y curvas ======================= */
+function styleOf(key) {
+  if (key === HERO) return { color:RED, dash:[], idx:-1 };
+  const i = S.cmp.styles.get(key) ?? 0;
+  return { color:PALETTE[i % PALETTE.length], dash:DASHES[Math.floor(i / PALETTE.length) % DASHES.length], idx:i };
+}
+function assignStyle(key) {
+  if (key === HERO) return;
+  const used = new Set(S.cmp.styles.values());
+  let i = 0; while (used.has(i)) i++;
+  S.cmp.styles.set(key, i);
+}
+function plottedTeams() {
+  return S.cmp.selected.map(k => S.byKey.get(k)).filter(t => t && shown(t)).slice(0, MAX_CMP);
+}
+function topKeys() {
+  const R = rankBy(S.cmp.metric, 'avg', passes);
+  const keys = R.pool.filter(i => i.v != null).slice(0, 10).map(i => i.t.key);
+  const hero = S.byKey.get(HERO);
+  if (hero && shown(hero) && !keys.includes(hero.key)) keys.unshift(hero.key);
+  return keys;
+}
+function setSelection(keys) {
+  S.cmp.styles = new Map(); S.cmp.hidden = new Set();
+  S.cmp.selected = keys.slice(0, MAX_CMP);
+  S.cmp.selected.forEach(assignStyle);
+}
+function flashCount() {
+  const el = $('#cmpCount');
+  el.classList.add('c-tona');
+  setTimeout(() => el.classList.remove('c-tona'), 1300);
+}
+function toggleTeam(key, on) {
+  const sel = S.cmp.selected;
+  if (on) {
+    if (sel.includes(key)) return;
+    if (plottedTeams().length >= MAX_CMP) { flashCount(); renderCmpList(); return; }
+    sel.push(key); assignStyle(key);
+  } else {
+    S.cmp.selected = sel.filter(k => k !== key);
+    S.cmp.styles.delete(key); S.cmp.hidden.delete(key);
+  }
+  renderCompare();
+}
+
+function renderCmpList() {
+  const R = rankBy(S.cmp.metric, 'avg', passes);
+  const q = norm(S.cmp.q);
+  const asc = cmpFactory('asc');
+  const items = R.items.filter(i => shown(i.t))
+    .sort((a, b) => (b.t.isHero - a.t.isHero) || asc(a, b))
+    .filter(i => !q || norm(i.t.name).includes(q) || norm(i.t.country).includes(q));
+  const plotted = new Set(plottedTeams().map(t => t.key));
+  const full = plotted.size >= MAX_CMP;
+  $('#cmpList').innerHTML = items.map(i => {
+    const t = i.t, on = plotted.has(t.key), st = styleOf(t.key);
+    const sw = on ? `<span class="swatch ${st.dash.length ? (st.dash[0] > 4 ? 'd1' : 'd2') : ''}" style="--c:${st.color}"></span>` : '<span class="swatch"></span>';
+    return `<li class="cmp-row ${t.isHero ? 'hero' : ''}">
+      <label class="cmp-item ${i.pass ? '' : 'dim'}">
+        <input type="checkbox" data-key="${esc(t.key)}" ${on ? 'checked' : ''} ${!on && full ? 'disabled' : ''}>
+        ${sw}
+        <span class="min-w-0 flex-1 truncate">${esc(t.name)}</span>
+        ${t.compliant ? '' : '<span title="Non-Compliant" aria-label="Non-Compliant">⚠️</span>'}
+        <span class="num c-mut text-xs">#${i.pos ?? '—'}</span>
+      </label>
+      <button type="button" class="ico-btn" data-open="${esc(t.key)}" aria-label="Ver ficha de ${esc(t.name)}" title="Ver ficha">ⓘ</button>
+    </li>`;
+  }).join('') || '<li class="px-2 py-6 text-center text-sm text-slate-500">Sin equipos para mostrar.</li>';
+  $('#cmpCount').textContent = `${plotted.size}/${MAX_CMP}`;
+}
+
+/* ---------- Plugins de Chart.js ---------- */
+const glowPlugin = {
+  id:'glow',
+  beforeDatasetDraw(chart, args) {
+    const d = chart.data.datasets[args.index];
+    if (d && d.glow) { const c = chart.ctx; c.save(); c.shadowColor = RED; c.shadowBlur = 16; }
+  },
+  afterDatasetDraw(chart, args) {
+    const d = chart.data.datasets[args.index];
+    if (d && d.glow) chart.ctx.restore();
+  }
+};
+function segIntersect(p1, p2, p3, p4) {
+  const d = (p2.x - p1.x) * (p4.y - p3.y) - (p2.y - p1.y) * (p4.x - p3.x);
+  if (Math.abs(d) < 1e-12) return null;
+  const t = ((p3.x - p1.x) * (p4.y - p3.y) - (p3.y - p1.y) * (p4.x - p3.x)) / d;
+  const u = ((p3.x - p1.x) * (p2.y - p1.y) - (p3.y - p1.y) * (p2.x - p1.x)) / d;
+  if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+  return { x:p1.x + t * (p2.x - p1.x), y:p1.y + t * (p2.y - p1.y) };
+}
+const crossPlugin = {
+  id:'crossings',
+  afterDatasetsDraw(chart) {
+    if (!S.cmp.cross) return;
+    const ds = chart.data.datasets;
+    const hi = ds.findIndex(d => d.isHero);
+    if (hi < 0 || !chart.isDatasetVisible(hi)) return;
+    const poly = d => d.data.map((v, i) => v == null ? null : { x:i, y:v }).filter(Boolean);
+    const H = poly(ds[hi]);
+    const xs = chart.scales.x, ys = chart.scales.y, c = chart.ctx;
+    c.save();
+    ds.forEach((d, di) => {
+      if (di === hi || !chart.isDatasetVisible(di)) return;
+      const P = poly(d);
+      for (let a = 0; a < H.length - 1; a++) for (let b = 0; b < P.length - 1; b++) {
+        const pt = segIntersect(H[a], H[a + 1], P[b], P[b + 1]);
+        if (!pt) continue;
+        c.beginPath();
+        c.arc(xs.getPixelForValue(pt.x), ys.getPixelForValue(pt.y), 5, 0, Math.PI * 2);
+        c.fillStyle = '#0B0C10'; c.fill();
+        c.lineWidth = 2; c.strokeStyle = '#ffffff'; c.stroke();
+      }
+    });
+    c.restore();
+  }
+};
+
+function ensureChart() {
+  if (S.chart) return S.chart;
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  Chart.defaults.font.family = MONO;
+  Chart.defaults.color = '#9aa3b5';
+  const canvas = $('#cmpChart');
+  S.chart = new Chart(canvas.getContext('2d'), {
+    type:'line',
+    data:{ labels:Array.from({ length:SLOTS }, (_, i) => [`Corrida ${i + 1}`, `S${Math.floor(i / 2) + 1} · R${i % 2 + 1}`]), datasets:[] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      animation:reduce ? false : { duration:350 },
+      layout:{ padding:{ top:8, right:14 } },
+      interaction:{ mode:'index', intersect:false },
+      scales:{
+        x:{ grid:{ color:'rgba(35,39,52,.7)' }, border:{ color:'#232734' },
+            ticks:{ color:'#9aa3b5', autoSkip:false, maxRotation:0, minRotation:0,
+                    font:c => ({ family:MONO, size:c.chart.width < 560 ? 9 : 11 }),
+                    callback:function (v, i) {
+                      const narrow = this.chart.width < 560, s = `S${Math.floor(i / 2) + 1}${narrow ? '·' : ' · '}R${i % 2 + 1}`;
+                      return [narrow ? `C${i + 1}` : `Corrida ${i + 1}`, s];
+                    } } },
+        y:{ reverse:true, grace:'5%', grid:{ color:'rgba(35,39,52,.7)' }, border:{ color:'#232734' },
+            ticks:{ color:'#9aa3b5', font:{ family:MONO, size:11 }, callback:v => Number(v).toFixed(3) },
+            title:{ display:true, text:'', color:'#9aa3b5', font:{ family:DISP, size:12, weight:'600' } } }
+      },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{
+          mode:'index', intersect:false, itemSort:(a, b) => a.parsed.y - b.parsed.y,
+          backgroundColor:'rgba(11,12,16,.95)', borderColor:'#232734', borderWidth:1,
+          titleColor:'#ffffff', bodyColor:'#cbd5e1', footerColor:'#8b94a7', padding:12, boxPadding:4, usePointStyle:true,
+          titleFont:{ family:DISP, size:13, weight:'700' }, bodyFont:{ family:MONO, size:11 }, bodySpacing:3,
+          callbacks:{
+            title:items => items.length ? `CORRIDA ${items[0].dataIndex + 1} · S${Math.floor(items[0].dataIndex / 2) + 1} · R${items[0].dataIndex % 2 + 1}` : '',
+            label:ctx => ` ${ctx.dataset.label}   ${fix(ctx.parsed.y, METRICS[S.cmp.metric].dec)}`,
+            labelColor:ctx => ({ borderColor:ctx.dataset._color, backgroundColor:ctx.dataset._color, borderWidth:0, borderRadius:2 }),
+            afterBody:items => {
+              if (!items.length) return '';
+              const idx = items[0].dataIndex, m = METRICS[S.cmp.metric], lines = [];
+              plottedTeams().forEach(t => {
+                const r = t.slots[idx] && t.slots[idx].main;
+                if (r && r.valid && r[m.key] != null) return;
+                const why = !r ? 'sin captura' : r.fs ? 'FS' : r.dns ? 'DNS' : !r.valid ? 'incompleta' : 'sin dato';
+                lines.push(`✕ ${t.name} — ${why}`);
+              });
+              return lines.length ? ['', ...lines] : '';
+            }
+          }
+        }
+      },
+      onHover:(evt, _a, chart) => {
+        const e = evt.native; if (!e) return;
+        const pts = chart.getElementsAtEventForMode(e, 'nearest', { intersect:false, axis:'xy' }, false);
+        let di = null;
+        if (pts.length) {
+          const el = pts[0].element, rect = chart.canvas.getBoundingClientRect();
+          if (Math.hypot(el.x - (e.clientX - rect.left), el.y - (e.clientY - rect.top)) < 28) di = pts[0].datasetIndex;
+        }
+        focusDataset(di);
+      }
+    },
+    plugins:[glowPlugin, crossPlugin]
+  });
+  canvas.addEventListener('mouseleave', () => focusDataset(null));
+  return S.chart;
+}
+
+function makeDataset(t, m) {
+  const st = styleOf(t.key), hero = t.isHero, alpha = passes(t) ? 1 : .38;
+  const data = t.slots.map(s => (s.main && s.main.valid && s.main[m.key] != null) ? s.main[m.key] : null);
+  return {
+    label:t.name, key:t.key, data, isHero:hero, glow:hero,
+    _color:st.color, _alpha:alpha, _w:hero ? 3 : 2,
+    borderColor:hexA(st.color, alpha), backgroundColor:hexA(st.color, alpha),
+    borderWidth:hero ? 3 : 2, borderDash:st.dash, borderCapStyle:'round', borderJoinStyle:'round',
+    pointRadius:hero ? 4.5 : 3, pointHoverRadius:hero ? 7 : 5.5,
+    pointBackgroundColor:hexA(st.color, alpha), pointBorderColor:'#0B0C10', pointBorderWidth:1.5,
+    tension:0, spanGaps:true, order:hero ? 0 : 1, hidden:S.cmp.hidden.has(t.key),
+    segment:{ borderDash:c => (c.p0.skip || c.p1.skip) ? [2, 5] : undefined }
+  };
+}
+
+function focusDataset(di) {
+  if (di === S.focus) return;
+  S.focus = di;
+  const ch = S.chart; if (!ch) return;
+  ch.data.datasets.forEach((d, j) => {
+    const a = di == null ? d._alpha : (j === di ? 1 : (d.isHero ? .8 : .12));
+    d.borderColor = hexA(d._color, a);
+    d.pointBackgroundColor = hexA(d._color, a);
+    d.pointBorderColor = hexA('#0B0C10', a > .5 ? 1 : a);
+  });
+  ch.update('none');
+  $$('#cmpLegend .chip').forEach(c => c.classList.toggle('focus', di != null && +c.dataset.i === di));
+}
+
+function renderLegend() {
+  const ch = S.chart;
+  $('#cmpLegend').innerHTML = ch.data.datasets.map((d, i) => {
+    const dash = (d.borderDash || []).join(' ');
+    return `<button type="button" class="chip ${d.isHero ? 'hero' : ''}" data-i="${i}" aria-pressed="${!d.hidden}" title="Clic: mostrar u ocultar · cursor encima: resaltar">
+      <svg width="28" height="8" viewBox="0 0 28 8" aria-hidden="true"><line x1="2" y1="4" x2="26" y2="4" stroke="${d._color}" stroke-width="${d._w}" stroke-linecap="round" stroke-dasharray="${dash}"/></svg>${esc(d.label)}</button>`;
+  }).join('');
+}
+function toggleHidden(i) {
+  const d = S.chart.data.datasets[i]; if (!d) return;
+  d.hidden = !d.hidden;
+  if (d.hidden) S.cmp.hidden.add(d.key); else S.cmp.hidden.delete(d.key);
+  S.chart.update();
+  renderLegend();
+}
+
+function renderSummary() {
+  const mk = S.cmp.metric, m = METRICS[mk];
+  const hero = S.byKey.get(HERO);
+  const heroAvg = hero ? statValue(hero, mk, 'avg') : null;
+  const rows = plottedTeams().map(t => ({ t, avg:statValue(t, mk, 'avg'), best:statValue(t, mk, 'best'), sg:statValue(t, mk, 'sigma') }))
+    .sort((a, b) => (a.avg ?? 9e9) - (b.avg ?? 9e9));
+  $('#cmpSumBody').innerHTML = rows.length ? rows.map(r => {
+    const st = styleOf(r.t.key);
+    return `<tr class="${r.t.isHero ? 'hero' : ''}">
+      <td class="font-semibold ${r.t.isHero ? 'text-white' : 'text-slate-100'}"><span class="swatch" style="--c:${st.color};display:inline-block;vertical-align:middle;margin-right:.6rem"></span>${esc(r.t.name)}</td>
+      <td class="r num c-mut">${r.t.validRuns.length}/${SLOTS}</td>
+      <td class="r num c-tele">${fix(r.best, m.dec)}</td>
+      <td class="r num text-white">${fix(r.avg, m.dec)}</td>
+      <td class="r num c-sigma">${fix(r.sg, m.dec)}</td>
+      <td class="r num c-volt">${r.t.isHero ? '—' : sfix(r.avg != null && heroAvg != null ? r.avg - heroAvg : null, m.dec)}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="6" class="py-8 text-center text-slate-500">Sin equipos seleccionados.</td></tr>';
+}
+
+function renderChart() {
+  const ch = ensureChart();
+  const m = METRICS[S.cmp.metric];
+  const teams = plottedTeams();
+  S.focus = null;
+  ch.data.datasets = teams.map(t => makeDataset(t, m));
+  ch.options.scales.y.title.text = `${m.label.toUpperCase()}  ▲ MÁS RÁPIDO`;
+  ch.update();
+  $('#cmpEmpty').hidden = teams.length > 0;
+  renderLegend();
+  renderSummary();
+}
+function renderCompare() { renderCmpList(); renderChart(); }
+
+/* ============================== Módulo 3: ficha ============================== */
+function histRow(r, labCell, best, ghost) {
+  const heat = r.heat != null ? `H${r.heat} · R${r.race ?? '?'}` : esc(r.heatLabel || '—');
+  const lane = r.lane ? esc(r.lane) : '—';
+  if (r.fs || r.dns) {
+    const code = r.fs ? 'FS' : 'DNS';
+    return `<tr class="fs">${labCell}<td class="num">${heat}</td><td class="num">${lane}</td>
+      <td class="r num">${code}</td><td class="r num">—</td><td class="r num">${code}</td><td class="r num">${code}</td><td class="r num">—</td><td class="r num">${code}</td></tr>`;
+  }
+  const cls = ghost ? 'ghost' : (!r.valid ? 'inv' : '');
+  let tag = '';
+  if (ghost) tag = `<span class="tag">${/ANULAD/.test(r.estado) ? 'ANULADA' : 'INCOMPLETA'}</span>`;
+  else if (r.rerun) tag = '<span class="tag ok">RE-RUN</span>';
+  else if (!r.valid) tag = '<span class="tag">INCOMPLETA</span>';
+  const hl = k => (!ghost && r.valid && r[k] != null && best[k] != null && Math.abs(r[k] - best[k]) < 5e-7) ? 'c-tele' : '';
+  const c = (k, d) => `<td class="r num ${hl(k)}">${r[k] == null ? '<span class="c-mut">—</span>' : fix(r[k], d)}</td>`;
+  const pos = r.pos ? `<td class="r num ${r.pos === 'P1' ? 'c-tele' : ''}">${esc(r.pos)}</td>` : '<td class="r num c-mut">—</td>';
+  return `<tr class="${cls}">${labCell}<td class="num">${heat}${tag}</td><td class="num">${lane}</td>${c('react', 3)}${c('s1', 3)}${c('track', 3)}${c('total', 3)}${c('speed', 2)}${pos}</tr>`;
+}
+
+function modalHTML(t) {
+  const m = METRICS.pista;
+  const v = k => t.validRuns.map(r => r[k]).filter(x => x != null);
+  const best = minOf(v('track')), avg = mean(v('track')), rv = mean(v('react')), sig = sd(v('track'));
+  const bestOf = { react:minOf(v('react')), s1:minOf(v('s1')), track:best, total:minOf(v('total')), speed:maxOf(v('speed')) };
+  const rec = S.global.best.pista;
+  const isRec = best != null && rec != null && Math.abs(best - rec) < 5e-7;
+  const all = rankBy('pista', 'avg', () => true);
+  const gPos = all.items.find(i => i.t === t);
+  const legal = t.compliant ? rankBy('pista', 'avg', x => x.compliant) : null;
+  const lPos = legal ? legal.items.find(i => i.t === t) : null;
+
+  const body = t.slots.map((sl, i) => {
+    const lab = `<td class="num c-mut">C${i + 1}<span class="sess">S${Math.floor(i / 2) + 1} · R${i % 2 + 1}</span></td>`;
+    let h = sl.main ? histRow(sl.main, lab, bestOf, false) : `<tr class="gap">${lab}<td colspan="8">— sin captura —</td></tr>`;
+    sl.extras.forEach(x => { h += histRow(x, '<td class="num c-mut"><span class="sess">↳ intento previo</span></td>', bestOf, true); });
+    return h;
+  }).join('');
+
+  const mk = (l, val, sub, cls = '') => `<div class="mk ${t.isHero ? 'hero' : ''}"><div class="mk-l">${l}</div><div class="mk-v num ${cls}">${val}</div><div class="mk-s">${sub}</div></div>`;
+  return `
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-2 pr-12">
+      <h2 id="mTitle" class="mod-title text-2xl text-white sm:text-3xl">${esc(t.name)}</h2>
+      ${t.compliant ? '<span class="badge ok">✓ Legal</span>' : '<span class="badge warn">⚠️ Non-Compliant</span>'}
+    </div>
+    <div class="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-slate-400">
+      <span class="flex items-center">${flagHTML(t.country)}${esc(titleCase(t.country))}</span>
+      <span class="num"><span class="text-white">${t.validRuns.length}/${SLOTS}</span> carreras válidas</span>
+      ${gPos && gPos.pos ? `<span class="num">Pista #${gPos.pos} de ${all.total}</span>` : ''}
+      ${lPos && lPos.pos ? `<span class="num">Entre legales #${lPos.pos} de ${legal.total}</span>` : ''}
+    </div>
+    <div class="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      ${mk('Mejor pista', `${fix(best)}<small class="ml-1 text-sm font-medium c-mut">s</small>`, isRec ? 'Récord del torneo' : `Δ récord ${sfix(best != null && rec != null ? best - rec : null)} s`, 'c-tele')}
+      ${mk('Promedio pista', `${fix(avg)}<small class="ml-1 text-sm font-medium c-mut">s</small>`, `${v('track').length} carreras`)}
+      ${mk('Promedio reacción', `${fix(rv)}<small class="ml-1 text-sm font-medium c-mut">s</small>`, 'Salida al semáforo', 'c-volt')}
+      ${mk('Desviación estándar <span class="sig">σ</span>', `${fix(sig)}<small class="ml-1 text-sm font-medium c-mut">s</small>`, 'Consistencia en pista', 'c-sigma')}
+    </div>
+    <h3 class="mod-title mt-6 text-sm text-slate-300">Historial de las 8 corridas</h3>
+    <div class="scroll mt-2 overflow-auto rounded-lg border border-line">
+      <table class="tbl hist w-full min-w-[760px]">
+        <thead><tr>
+          <th scope="col">Corrida</th><th scope="col">Heat / Carrera</th><th scope="col">Carril</th>
+          <th scope="col" class="r">Reacción</th><th scope="col" class="r">Sector 1</th><th scope="col" class="r">Pista</th>
+          <th scope="col" class="r">Total</th><th scope="col" class="r">Vel. m/s</th><th scope="col" class="r">Posición</th>
+        </tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    </div>
+    <p class="mt-3 text-xs text-slate-500">Verde: mejor marca del equipo en esa columna. Rojo: salida en falso (FS) o no salida (DNS), que no cuentan en promedios.</p>`;
+}
+
+function openTeam(key) {
+  const t = S.byKey.get(key); if (!t) return;
+  S.lastFocusEl = document.activeElement;
+  $('#modalBody').innerHTML = modalHTML(t);
+  $('#modalCard').classList.toggle('hero-card', t.isHero);
+  $('#modal').hidden = false;
+  document.body.style.overflow = 'hidden';
+  $('#modalCard').focus();
+}
+function closeModal() {
+  if ($('#modal').hidden) return;
+  $('#modal').hidden = true;
+  document.body.style.overflow = '';
+  if (S.lastFocusEl && S.lastFocusEl.focus) S.lastFocusEl.focus();
+}
+
+/* ================================== Render ================================== */
+function renderAll() {
+  syncControls();
+  renderChip();
+  renderHero();
+  renderTable();
+  renderCompare();
+}
+function onRulesChange() { syncControls(); renderHero(); renderTable(); renderCompare(); }
+function applyAutoOrder() { if (S.orderAuto) S.order = natDir(S.metric, S.stat); }
+
+/* ================================== Eventos ================================== */
+function bind() {
+  $('#perfSwitch').addEventListener('click', () => { S.perf = S.perf === 'compliant' ? 'all' : 'compliant'; onRulesChange(); });
+  $('#segPerf').addEventListener('click', e => { const b = e.target.closest('[data-perf]'); if (b) { S.perf = b.dataset.perf; onRulesChange(); } });
+  $('#segMode').addEventListener('click', e => { const b = e.target.closest('[data-mode]'); if (b) { S.mode = b.dataset.mode; onRulesChange(); } });
+
+  $('#segMetric').addEventListener('click', e => {
+    const b = e.target.closest('[data-metric]'); if (!b) return;
+    S.metric = b.dataset.metric; applyAutoOrder(); syncControls(); renderHero(); renderTable();
+  });
+  $('#segStat').addEventListener('click', e => {
+    const b = e.target.closest('[data-stat]'); if (!b) return;
+    S.stat = b.dataset.stat; applyAutoOrder(); syncControls(); renderHero(); renderTable();
+  });
+  $('#segOrder').addEventListener('click', e => {
+    const b = e.target.closest('[data-order]'); if (!b) return;
+    S.order = b.dataset.order; S.orderAuto = false; syncControls(); renderTable();
+  });
+  $('#q').addEventListener('input', e => { S.query = e.target.value; renderTable(); });
+  $('#tbody').addEventListener('click', e => { const tr = e.target.closest('tr[data-key]'); if (tr) openTeam(tr.dataset.key); });
+
+  $('#segCmpMetric').addEventListener('click', e => {
+    const b = e.target.closest('[data-cmetric]'); if (!b) return;
+    S.cmp.metric = b.dataset.cmetric; syncControls(); renderCompare();
+  });
+  $('#chkCross').addEventListener('change', e => { S.cmp.cross = e.target.checked; if (S.chart) S.chart.draw(); });
+  $('#btnTop10').addEventListener('click', () => { setSelection(topKeys()); renderCompare(); });
+  $('#btnClear').addEventListener('click', () => { setSelection([]); renderCompare(); });
+  $('#cmpQ').addEventListener('input', e => { S.cmp.q = e.target.value; renderCmpList(); });
+  $('#cmpList').addEventListener('change', e => {
+    const cb = e.target.closest('input[type="checkbox"][data-key]'); if (cb) toggleTeam(cb.dataset.key, cb.checked);
+  });
+  $('#cmpList').addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) openTeam(b.dataset.open); });
+
+  const legend = $('#cmpLegend');
+  legend.addEventListener('click', e => { const c = e.target.closest('.chip'); if (c) toggleHidden(+c.dataset.i); });
+  legend.addEventListener('pointerover', e => { const c = e.target.closest('.chip'); if (c && e.pointerType === 'mouse') focusDataset(+c.dataset.i); });
+  legend.addEventListener('pointerout', e => { const c = e.target.closest('.chip'); if (c && e.pointerType === 'mouse') focusDataset(null); });
+  legend.addEventListener('focusin', e => { const c = e.target.closest('.chip'); if (c) focusDataset(+c.dataset.i); });
+  legend.addEventListener('focusout', () => focusDataset(null));
+
+  $('#modal').addEventListener('click', e => { if (e.target.closest('[data-close]')) closeModal(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (!$('#modal').hidden) closeModal();
+      else if (!$('#gate').hidden && S.teams.length) showGate('none');
+      return;
+    }
+    if (e.key === 'Tab' && !$('#modal').hidden) {
+      const f = $$('#modalCard button, #modalCard [href], #modalCard input, #modalCard [tabindex]:not([tabindex="-1"])').filter(x => !x.disabled);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && (document.activeElement === first || document.activeElement === $('#modalCard'))) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
+
+  $('#btnLoad').addEventListener('click', () => showGate('upload', 'Elige un CSV con las columnas de mundial_2026_clean.csv. Reemplaza los datos que ves ahora.', S.teams.length > 0));
+  $('#gateCancel').addEventListener('click', () => showGate('none'));
+  const pick = f => { if (f) ingest(f, f.name); };
+  $('#file').addEventListener('change', e => { pick(e.target.files[0]); e.target.value = ''; });
+  const drop = $('#drop');
+  ['dragenter', 'dragover'].forEach(ev => window.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => window.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  window.addEventListener('drop', e => { const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) pick(f); });
+}
+
+bind();
+syncControls();
+autoLoad();
+})();
+</script>
+</body>
+</html>
